@@ -5,6 +5,7 @@ import { storage, db } from "../firebase";
 export default function ToolBar({
   tokenPosition,
   toolPosition,
+  activeToken,
   setActiveToken,
   editState,
   setEditState,
@@ -52,7 +53,7 @@ export default function ToolBar({
   };
 
   const handleUpload = () => {
-    const uploadTask = storage.ref(`map/${image.name}`).put(image);
+    const uploadTask = storage.ref(`tokens/${image.name}`).put(image);
     uploadTask.on(
       "state_changed",
       (snapshot) => {},
@@ -61,12 +62,12 @@ export default function ToolBar({
       },
       () => {
         storage
-          .ref("map")
+          .ref("tokens")
           .child(image.name)
           .getDownloadURL()
           .then((url) => {
             setUrl(url);
-            db.collection("map")
+            db.collection("tokens")
               .doc("link")
               .set({
                 map: url,
@@ -93,9 +94,9 @@ export default function ToolBar({
           position: "absolute",
           border: "1px solid black",
           backgroundColor: "white",
-          width: "30%",
+          width: "20%",
           height: "100px",
-          zIndex: "1000",
+          zIndex: "100000",
         }}
       >
         <img
@@ -147,6 +148,45 @@ export default function ToolBar({
           src="/comTokens/exit.png"
           alt="x"
           style={{ width: "40px", height: "40px" }}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          left: tokenPosition.x,
+          top: tokenPosition.y + 100,
+          overflow: "hidden",
+          position: "absolute",
+          border: "1px solid black",
+          backgroundColor: "white",
+          width: "20%",
+          height: "500px",
+          zIndex: "100000",
+        }}
+      >
+        <img
+          style={{
+            width: "30%",
+            margin: "10px",
+            alignContent: "center",
+          }}
+          src={activeToken}
+          alt=""
+        />
+        <label>Size</label>
+        <input
+          type="number"
+          name="tokenSize"
+          id="tokenSize"
+          defaultValue="1"
+          style={{
+            left: "25%",
+            width: "30%",
+            textAlign: "center",
+            justifyItems: "center",
+          }}
         />
       </div>
       <div

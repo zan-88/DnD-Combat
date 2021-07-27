@@ -83,6 +83,7 @@ export default function App() {
         tokenPosition={tokenPosition}
         toolPosition={toolPosition}
         editState={editState}
+        activeToken={activeToken}
         setActiveToken={setActiveToken}
         setEditState={setEditState}
       />

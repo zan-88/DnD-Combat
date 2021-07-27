@@ -1,4 +1,5 @@
 import React, { Component, useEffect, useState } from "react";
+import Token from "./Token";
 
 export default function Map({
   activeToken,
@@ -12,7 +13,9 @@ export default function Map({
   const winWidth = window.outerWidth;
   const winHeight = window.innerHeight;
   const [tiles, setTiles] = useState([]);
-  const [prevEvent, setPrevEvent] = useState(null);
+  const [prevEvent, setPrevEvent] = useState(0);
+  const [prevTile, setPrevTile] = useState(null);
+  const [tokens, setTokens] = useState([]);
   let img = new Image();
   img.onload = function () {
     setIsLoaded(true);
@@ -20,6 +23,8 @@ export default function Map({
   img.src = url;
   let width = img.naturalWidth;
   let height = img.naturalHeight;
+  const rowCount = height / tileDim;
+  const colCount = width / tileDim;
 
   if (winWidth - width < winHeight - height) {
     width = winWidth;
@@ -38,13 +43,14 @@ export default function Map({
     const _tiles = [];
     let id = 0;
 
-    for (let x = loc.x; x < Math.floor(loc.x + width); x += tileDim) {
+    for (let x = 0; x < colCount; x += 1) {
       const row = [];
-      for (let y = loc.y; y < Math.floor(loc.y + height); y += tileDim) {
+      for (let y = 0; y < rowCount; y += 1) {
         row.push({
-          x: x,
-          y: y,
+          x: loc.x + tileDim * x,
+          y: loc.y + tileDim * y,
           id: id++,
+          isActive: false,
         });
       }
       _tiles.push(row);
@@ -60,29 +66,66 @@ export default function Map({
     event.target.style.backgroundColor = "rgba(255,255,255,0)";
   }
 
-  function handleTokenEvent(event) {
-    if (editState === 0) {
-      event.target.style.background = `url(${activeToken}) no-repeat`;
-      event.target.style.backgroundSize = "cover";
-      event.target.style.backgroundRepeat = "no-repeat";
-    } else if (editState === 1 && event.target.style.backgroundImage !== "") {
-      setPrevEvent(event);
-      setActiveToken(event.target.style.backgroundImage);
-      console.log(activeToken);
+  function handleTokenEvent(tile, event) {
+    let index = tokens.findIndex((ind) => ind.id === tile.id);
+    let array = tokens;
+    //Place new Token
+    if (editState === 0 && !tile.isActive && activeToken !== "") {
+      let sizeMod = document.getElementById("tokenSize").value;
+      sizeMod = sizeMod === "" ? 1 : parseInt(sizeMod);
+      console.log(tile.id);
+      setTokens([
+        ...tokens,
+        {
+          img: activeToken,
+          x: tile.x,
+          y: tile.y,
+          dim: tileDim * sizeMod,
+          id: tile.id,
+          size: sizeMod,
+        },
+      ]);
+      tile.isActive = true;
+    } //Pick up Token
+    else if (editState === 1 && tile.isActive) {
+      setPrevEvent(index);
+      console.log(tokens[index]);
+      console.log(tile);
+      setPrevTile(tile);
+      setActiveToken(tokens[index].img);
       setEditState(3);
-    } else if (editState === 2) {
-      event.target.style.background = "";
-    } else {
+    } //Delete Token
+    else if (editState === 2 && tile.isActive) {
+      console.log(index + "ind");
+      array.splice(index, 1);
+      setTokens([...array]);
+      tile.isActive = false;
+    } //Place Token
+    else if (editState === 3 && !tile.isActive) {
       if (activeToken !== "") {
-        let temp = activeToken.split("/");
-        temp = temp[temp.length - 1].split(".");
-        let tempStr = temp[0] + ".";
-        tempStr = tempStr.concat("png");
-        console.log(tempStr);
-        event.target.style.background = `url(/tokens/${tempStr}) no-repeat`;
-        event.target.style.backgroundSize = "cover";
-        event.target.style.backgroundRepeat = "no-repeat";
-        prevEvent.target.style.background = "";
+        let size = tokens[prevEvent].size;
+        let token = tokens[prevEvent];
+        array.splice(prevEvent, 1);
+        setTokens(array);
+        let tokId = token.id;
+        console.log(tokId);
+        let row = Math.floor(tokId / rowCount);
+        let col = tokId - row * rowCount;
+        console.log("id" + tokId);
+        console.log("row:" + row + "col: " + col);
+        tiles[row][col].isActive = false;
+        setTokens([
+          ...tokens,
+          {
+            img: activeToken,
+            x: tile.x,
+            y: tile.y,
+            dim: tileDim * size,
+            id: tile.id,
+            size: size,
+          },
+        ]);
+        tile.isActive = true;
         setActiveToken("");
         setEditState(1);
       }
@@ -113,11 +156,11 @@ export default function Map({
             <div>
               <div
                 key={tile.id}
-                onClick={handleTokenEvent.bind(this)}
+                onClick={handleTokenEvent.bind(this, tile)}
                 style={{
                   position: "fixed",
 
-                  zIndex: "1",
+                  zIndex: "100",
                   top: tile.y,
                   left: `${tile.x}px`,
                   borderLeft: "1px solid rgba(0,0,0,0.2)",
@@ -139,6 +182,9 @@ export default function Map({
             </div>
           ))}
         </div>
+      ))}
+      {tokens.map((token) => (
+        <Token key={token.id} token={token} />
       ))}
     </div>
   );
